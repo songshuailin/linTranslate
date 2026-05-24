@@ -1,8 +1,8 @@
 # LinTranslate / 灵译
 
-LinTranslate is a lightweight desktop translator for quick selected-text and screenshot translation. It uses OpenAI-compatible API providers, so you can connect it to local models, self-hosted gateways, or cloud services that expose `/v1/chat/completions`.
+LinTranslate is a lightweight macOS desktop translator for quick selected-text and screenshot translation. It uses OpenAI-compatible API providers, so you can connect it to local models, self-hosted gateways, or cloud services that expose `/v1/chat/completions`.
 
-灵译是一款轻量桌面翻译工具，支持划词翻译和截图翻译。它通过 OpenAI-compatible API 接入模型服务，可以连接本地模型、自建网关，或兼容 `/v1/chat/completions` 的云端服务。
+灵译是一款轻量 macOS 桌面翻译工具，支持划词翻译和截图翻译。它通过 OpenAI-compatible API 接入模型服务，可以连接本地模型、自建网关，或兼容 `/v1/chat/completions` 的云端服务。
 
 ## Features / 功能
 

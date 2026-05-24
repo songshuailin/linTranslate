@@ -22,8 +22,6 @@ jobs:
         include:
           - platform: macos-latest
             args: --bundles dmg
-          - platform: windows-latest
-            args: --bundles nsis
 
     runs-on: ${{ matrix.platform }}
 
@@ -59,7 +57,6 @@ jobs:
             灵译本地划词/截图气泡翻译器。
 
             - macOS: 下载 `.dmg`
-            - Windows: 下载 `setup.exe`
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}

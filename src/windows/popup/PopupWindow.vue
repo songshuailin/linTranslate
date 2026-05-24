@@ -24,8 +24,13 @@ async function copyText(): Promise<void> {
   } catch { /* ignore */ }
 }
 
-async function startDrag(): Promise<void> {
-  await getCurrentWindow().startDragging()
+async function startDrag(event: MouseEvent): Promise<void> {
+  if (event.button !== 0) return
+
+  const target = event.target as HTMLElement | null
+  if (target?.closest('button, summary, details, pre, .content-area')) return
+
+  await getCurrentWindow().startDragging().catch(() => {})
 }
 
 const statusLabel: Record<TranslationStatus, string> = {
@@ -50,9 +55,9 @@ function popupTitle(): string {
 </script>
 
 <template>
-  <div class="popup-container">
+  <div class="popup-container" data-tauri-drag-region @mousedown="startDrag">
     <!-- Header -->
-    <div class="header-bar" data-tauri-drag-region @mousedown="startDrag">
+    <div class="header-bar" data-tauri-drag-region>
       <div class="flex-items-center gap-2" data-tauri-drag-region>
         <span class="text-sm font-medium text-gray-700" data-tauri-drag-region>{{ popupTitle() }}</span>
         <span class="text-xs" :class="statusClass(popup.status)" data-tauri-drag-region>{{ statusLabel[popup.status] }}</span>
@@ -92,6 +97,7 @@ function popupTitle(): string {
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   border: 1px solid #e5e7eb;
   overflow: hidden;
+  cursor: move;
 }
 
 .header-bar {
@@ -145,6 +151,7 @@ function popupTitle(): string {
   cursor: pointer;
   background: none;
   border: none;
+  cursor: pointer;
 }
 
 .action-btn:hover {
@@ -157,6 +164,8 @@ function popupTitle(): string {
   font-size: 14px;
   line-height: 1.625;
   max-height: calc(100vh - 76px);
+  cursor: auto;
+  user-select: text;
 }
 
 .text-red-500 {
