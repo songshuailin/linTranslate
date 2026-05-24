@@ -165,29 +165,6 @@ fn trigger_screenshot_translation(app: tauri::AppHandle) {
     });
 }
 
-fn trigger_game_screenshot_translation(app: tauri::AppHandle) {
-    if let Some(win) = app.get_webview_window("popup") {
-        win.destroy().ok();
-    }
-
-    tauri::async_runtime::spawn(async move {
-        match commands::screenshot::capture_screenshot_with_cursor_release_to_temp() {
-            Ok(image_path) => {
-                println!("[game_screenshot] Captured screenshot: {}", image_path);
-                open_screenshot_popup(&app, &image_path);
-            }
-            Err(err) => {
-                println!("[game_screenshot] Interrupted: {}", err);
-                if is_screenshot_permission_error(&err) {
-                    open_error_popup(&app, "截图失败：请在系统设置中授权屏幕录制权限");
-                } else if !is_screenshot_cancelled(&err) {
-                    open_error_popup(&app, &err);
-                }
-            }
-        }
-    });
-}
-
 fn is_screenshot_cancelled(err: &str) -> bool {
     err.contains("取消")
         || err.contains("未生成图片")
@@ -206,7 +183,7 @@ fn main() {
 
     let builder = tauri::Builder::<tauri::Wry>::default().plugin(
         tauri_plugin_global_shortcut::Builder::new()
-            .with_shortcuts(["Command+E", "Command+R", "Command+Shift+R"])
+            .with_shortcuts(["Command+E", "Command+R"])
             .expect("Failed to register default global shortcuts")
             .with_handler(|app, shortcut, event| {
                 if event.state != ShortcutState::Pressed {
@@ -217,8 +194,6 @@ fn main() {
                     trigger_translate_selection(app.clone());
                 } else if shortcut.matches(Modifiers::SUPER, Code::KeyR) {
                     trigger_screenshot_translation(app.clone());
-                } else if shortcut.matches(Modifiers::SUPER | Modifiers::SHIFT, Code::KeyR) {
-                    trigger_game_screenshot_translation(app.clone());
                 }
             })
             .build(),
@@ -251,9 +226,6 @@ fn main() {
                 }
                 "translate_screenshot" => {
                     trigger_screenshot_translation(app.app_handle().clone());
-                }
-                "translate_game_screenshot" => {
-                    trigger_game_screenshot_translation(app.app_handle().clone());
                 }
                 "quit" => {
                     quit_guard.explicit_quit.store(true, Ordering::SeqCst);
@@ -298,8 +270,6 @@ fn main() {
                 MenuItemBuilder::with_id("translate_selection", "翻译选中文本").build(app)?;
             let translate_screenshot =
                 MenuItemBuilder::with_id("translate_screenshot", "截图翻译").build(app)?;
-            let translate_game_screenshot =
-                MenuItemBuilder::with_id("translate_game_screenshot", "游戏截图翻译").build(app)?;
             let quit = MenuItemBuilder::with_id("quit", "退出").build(app)?;
 
             let separator = tauri::menu::PredefinedMenuItem::separator(app)?;
@@ -309,7 +279,6 @@ fn main() {
                     &open_settings as &dyn IsMenuItem<_>,
                     &translate_selection as &dyn IsMenuItem<_>,
                     &translate_screenshot as &dyn IsMenuItem<_>,
-                    &translate_game_screenshot as &dyn IsMenuItem<_>,
                     &separator as &dyn IsMenuItem<_>,
                     &quit as &dyn IsMenuItem<_>,
                 ],

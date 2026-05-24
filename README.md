@@ -24,11 +24,9 @@ LinTranslate is a lightweight desktop translator for quick selected-text and scr
 
 - `Command + E`: translate selected text.
 - `Command + R`: screenshot translation.
-- `Command + Shift + R`: game screenshot translation.
 
 - `Command + E`：翻译选中文本。
 - `Command + R`：截图翻译。
-- `Command + Shift + R`：游戏截图翻译。
 
 ## API Setup / API 设置
 

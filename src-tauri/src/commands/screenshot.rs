@@ -12,30 +12,15 @@ static SCREENSHOT_PID: OnceLock<Mutex<Option<u32>>> = OnceLock::new();
 
 #[cfg(target_os = "macos")]
 mod macos_impl {
-    use std::os::raw::{c_int, c_uchar};
+    use std::os::raw::c_uchar;
 
     #[link(name = "ApplicationServices", kind = "framework")]
     extern "C" {
         fn CGPreflightScreenCaptureAccess() -> c_uchar;
-        fn CGAssociateMouseAndMouseCursorPosition(connected: c_int) -> i32;
-        fn CGDisplayShowCursor(display: u32) -> i32;
-        fn CGMainDisplayID() -> u32;
     }
 
     pub fn screen_recording_granted() -> bool {
         unsafe { CGPreflightScreenCaptureAccess() != 0 }
-    }
-
-    pub fn release_mouse_for_native_screenshot() {
-        unsafe {
-            let _ = CGAssociateMouseAndMouseCursorPosition(1);
-            let main_display = CGMainDisplayID();
-            for _ in 0..3 {
-                let _ = CGDisplayShowCursor(main_display);
-            }
-        }
-
-        std::thread::sleep(std::time::Duration::from_millis(120));
     }
 }
 
@@ -97,14 +82,6 @@ fn cancel_active_screenshot() {
 }
 
 pub fn capture_screenshot_to_temp() -> Result<String, String> {
-    capture_screenshot_to_temp_with_options(false)
-}
-
-pub fn capture_screenshot_with_cursor_release_to_temp() -> Result<String, String> {
-    capture_screenshot_to_temp_with_options(true)
-}
-
-fn capture_screenshot_to_temp_with_options(release_cursor: bool) -> Result<String, String> {
     if SCREENSHOT_IN_PROGRESS.swap(true, Ordering::SeqCst) {
         cancel_active_screenshot();
         return Err("截图已取消".to_string());
@@ -114,11 +91,6 @@ fn capture_screenshot_to_temp_with_options(release_cursor: bool) -> Result<Strin
     if !macos_impl::screen_recording_granted() {
         SCREENSHOT_IN_PROGRESS.store(false, Ordering::SeqCst);
         return Err("缺少屏幕录制权限，请在系统设置中授权".to_string());
-    }
-
-    #[cfg(target_os = "macos")]
-    if release_cursor {
-        macos_impl::release_mouse_for_native_screenshot();
     }
 
     let result = capture_screenshot_to_temp_inner();
