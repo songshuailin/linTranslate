@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { getCurrentWindow } from '@tauri-apps/api/window'
+import { cursorPosition, PhysicalPosition } from '@tauri-apps/api/window'
+import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
 import type { TranslationPopup, TranslationStatus } from '../../services/translator/translator-types'
 
 interface Props {
@@ -11,9 +12,12 @@ const props = defineProps<Props>()
 const emit = defineEmits<{
   close: []
   copy: [text: string]
+  dragStart: []
+  dragEnd: []
 }>()
 
 const isCopied = ref(false)
+const popupWindow = getCurrentWebviewWindow()
 
 async function copyText(): Promise<void> {
   try {
@@ -24,13 +28,55 @@ async function copyText(): Promise<void> {
   } catch { /* ignore */ }
 }
 
-async function startDrag(event: MouseEvent): Promise<void> {
+async function startDrag(event: PointerEvent): Promise<void> {
   if (event.button !== 0) return
 
   const target = event.target as HTMLElement | null
   if (target?.closest('button')) return
 
-  await getCurrentWindow().startDragging().catch(() => {})
+  event.preventDefault()
+  emit('dragStart')
+
+  const dragTarget = event.currentTarget as HTMLElement | null
+  dragTarget?.setPointerCapture?.(event.pointerId)
+
+  const startCursor = await cursorPosition()
+  const startPosition = await popupWindow.outerPosition()
+  let frame = 0
+  let latestCursor = startCursor
+
+  const stopManualDrag = () => {
+    if (frame) {
+      cancelAnimationFrame(frame)
+      frame = 0
+    }
+    dragTarget?.releasePointerCapture?.(event.pointerId)
+    window.removeEventListener('pointermove', moveManually)
+    window.removeEventListener('pointerup', stopManualDrag)
+    window.removeEventListener('pointercancel', stopManualDrag)
+    emit('dragEnd')
+  }
+
+  const updatePosition = async () => {
+    frame = 0
+    await popupWindow.setPosition(new PhysicalPosition(
+      startPosition.x + latestCursor.x - startCursor.x,
+      startPosition.y + latestCursor.y - startCursor.y,
+    )).catch(() => {})
+  }
+
+  async function moveManually() {
+    latestCursor = await cursorPosition().catch(() => latestCursor)
+    if (!frame) {
+      frame = requestAnimationFrame(updatePosition)
+    }
+  }
+
+  window.addEventListener('pointermove', moveManually)
+  window.addEventListener('pointerup', stopManualDrag)
+  window.addEventListener('pointercancel', stopManualDrag)
+
+  popupWindow.startDragging().catch(() => {})
 }
 
 const statusLabel: Record<TranslationStatus, string> = {
@@ -57,16 +103,16 @@ function popupTitle(): string {
 <template>
   <div class="popup-container">
     <!-- Header -->
-    <div class="header-bar" data-tauri-drag-region @mousedown="startDrag">
+    <div class="header-bar" data-tauri-drag-region @pointerdown="startDrag">
       <div class="flex-items-center gap-2" data-tauri-drag-region>
         <span class="text-sm font-medium text-gray-700" data-tauri-drag-region>{{ popupTitle() }}</span>
         <span class="text-xs" :class="statusClass(popup.status)" data-tauri-drag-region>{{ statusLabel[popup.status] }}</span>
       </div>
       <div class="flex gap-1">
-        <button title="复制" class="action-btn" @mousedown.stop @click="copyText">
+        <button title="复制" class="action-btn" @pointerdown.stop @click="copyText">
           {{ isCopied ? '已复制' : '复制' }}
         </button>
-        <button title="关闭" class="action-btn" @mousedown.stop @click="emit('close')">✕</button>
+        <button title="关闭" class="action-btn" @pointerdown.stop @click="emit('close')">✕</button>
       </div>
     </div>
 

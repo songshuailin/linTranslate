@@ -1,6 +1,6 @@
 {
   "name": "lintranslator",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Local Bubble Translator - macOS desktop app for text and image translation",
   "type": "module",
   "scripts": {

@@ -4,7 +4,7 @@ import PopupWindow from './windows/popup/PopupWindow.vue'
 import { usePopupStore } from './windows/popup/popup-store'
 import { translateTextStream } from './services/translator/text-translator'
 import { translateImageStream } from './services/translator/image-translator'
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import type { AppConfig } from './services/config/app-config'
 import type { TranslationPopup, TranslationStatus } from './services/translator/translator-types'
 import { loadConfig } from './services/config/config-storage'
@@ -18,6 +18,17 @@ const currentWindow = getCurrentWebviewWindow()
 const isPopupWindow = currentWindow.label === 'popup'
 let config: AppConfig | null = null
 let isClosingPopupWindow = false
+const isPopupDragActive = ref(false)
+
+function markPopupDragStart() {
+  isPopupDragActive.value = true
+}
+
+function markPopupDragEnd() {
+  window.setTimeout(() => {
+    isPopupDragActive.value = false
+  }, 120)
+}
 
 onMounted(async () => {
   if (isPopupWindow) return
@@ -289,7 +300,11 @@ onMounted(async () => {
 
     await currentWindow.onFocusChanged((event) => {
       if (!event.payload) {
-        closePopupWindow()
+        window.setTimeout(() => {
+          if (!isPopupDragActive.value) {
+            closePopupWindow()
+          }
+        }, 160)
       }
     })
 
@@ -367,6 +382,8 @@ async function destroyPopupHostWindow() {
         :key="p.id"
         :popup="p"
         @close="closePopup(p.id)"
+        @drag-start="markPopupDragStart"
+        @drag-end="markPopupDragEnd"
       />
     </div>
   </div>
