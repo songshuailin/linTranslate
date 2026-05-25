@@ -1,6 +1,6 @@
 # TODO.md - Local Bubble Translator 执行清单
 
-最后更新：2026-05-22
+最后更新：2026-05-25
 
 本文件是后续开发的约束清单。弱模型继续工作时，必须先读 `docs/DEVELOPMENT.md` 和本文件，再改代码。
 
@@ -246,12 +246,24 @@
 
 ## 11. 阶段 9 - 打包
 
-状态：基础打包完成，后续需要干净环境验证和正式图标优化。
+状态：基础打包完成，GitHub Release 当前只发布 macOS `.dmg`；Windows 暂缓发布，等有测试设备后再恢复验证。
 
 - [x] 确认 app 名称、bundle identifier、图标。
 - [x] 生成 `.app`。
 - [x] 生成 `.dmg`。
+- [x] 增加 `npm run build:mac`。
+- [x] 增加 `npm run build:windows`，目标为 `x86_64-pc-windows-msvc` 的 NSIS/MSI 安装包。
+- [x] GitHub Actions release workflow 当前仅使用 `macos-latest` 构建 `.dmg`。
 - [ ] 在干净 macOS 用户环境验证首次启动、权限提示、状态栏图标、设置页。
+- [ ] 在 Windows/MSVC 环境验证 `npm run build:windows`，并确认状态栏、快捷键、截图策略是否需要 Windows 原生适配。
+
+Windows 构建说明：
+
+- 在没有 Windows 测试设备前，不发布 Windows release。
+- 当前只修复和优化 macOS 版本；Windows 脚本仅作为未来准备，不接入 release 矩阵。
+- 推荐在 Windows 机器或 Windows CI 中构建，不把 macOS 交叉编译 Windows 安装包作为默认路径。
+- 需要 Node.js、pnpm、Rust MSVC 工具链、Visual Studio Build Tools、WebView2 运行时/再发行组件支持。
+- 当前应用多处功能仍以 macOS 第一版为主；Windows 安装包构建通过后，还需要逐项验证选中文本、截图、权限提示和托盘行为。
 
 ---
 
@@ -292,6 +304,14 @@
 6. **测试模型连接报错 "Load failed"**
    - 原因：模型服务未运行或 API 地址不可达。
    - 修复：改进错误提示，显示具体无法连接的地址和服务状态。
+
+7. 翻译气泡可从内容区随意拖动
+   - 原因：`PopupWindow.vue` 把整个气泡容器设置为 Tauri 拖拽区域，内容区空白、文本选择和滚动区域都可能触发窗口拖动。
+   - 修复：只在顶部标题栏设置拖拽区域，内容区不再触发 `startDragging()`。
+
+8. 截图翻译在代码/英文注释混合场景偶尔只展示原文
+   - 原因：视觉翻译 prompt 没有明确区分代码结构和自然语言内容，模型可能把任务当成截图转写。
+   - 修复：强化截图翻译 system/user prompt，要求保留代码、变量名、路径，翻译注释、说明、错误信息和其他自然语言，并禁止只转写原文。
 
 ---
 

@@ -1,6 +1,6 @@
 {
   "name": "lintranslator",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Local Bubble Translator - macOS desktop app for text and image translation",
   "type": "module",
   "scripts": {
@@ -8,6 +8,8 @@
     "dev": "tauri dev",
     "build:frontend": "vite build",
     "build": "tauri build",
+    "build:mac": "tauri build --bundles app,dmg",
+    "build:windows": "tauri build --bundles nsis,msi --target x86_64-pc-windows-msvc",
     "preview": "vite preview"
   },
   "dependencies": {

@@ -76,6 +76,30 @@ Build the app:
 npm run build
 ```
 
+Build macOS bundles:
+
+构建 macOS 安装包：
+
+```bash
+npm run build:mac
+```
+
+Future Windows installer build entry, not part of current releases:
+
+未来 Windows 安装包构建入口；当前 release 暂不发布 Windows 版本：
+
+```bash
+npm run build:windows
+```
+
+Windows packaging is paused until there is a Windows test device. Current GitHub Releases only build and publish the macOS `.dmg`.
+
+在有 Windows 测试设备之前，Windows 打包暂缓。当前 GitHub Releases 只构建和发布 macOS `.dmg`。
+
+When Windows packaging resumes, build from a Windows/MSVC environment with Node.js, pnpm, Rust MSVC toolchain, Visual Studio Build Tools, and WebView2 runtime/redistributable support installed. Cross-building Windows installers from macOS is not the supported path for this project.
+
+后续恢复 Windows 打包时，建议在 Windows/MSVC 环境构建，需要 Node.js、pnpm、Rust MSVC 工具链、Visual Studio Build Tools，以及 WebView2 运行时/再发行组件支持。本项目不把 macOS 交叉编译 Windows 安装包作为默认路径。
+
 ## Release / 发布
 
 Create and push a version tag to publish a GitHub Release:

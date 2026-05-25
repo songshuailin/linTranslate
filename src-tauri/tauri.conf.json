@@ -1,6 +1,6 @@
 {
   "productName": "灵译",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "identifier": "com.localbubble.translator",
   "build": {
     "beforeDevCommand": "npm run dev:frontend",

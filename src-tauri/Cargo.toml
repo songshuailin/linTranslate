@@ -1,6 +1,6 @@
 [package]
 name = "local-bubble-translator"
-version = "0.1.0"
+version = "0.1.1"
 description = "Local Bubble Translator - macOS desktop app for text and image translation"
 authors = []
 edition = "2021"

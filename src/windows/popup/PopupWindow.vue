@@ -28,7 +28,7 @@ async function startDrag(event: MouseEvent): Promise<void> {
   if (event.button !== 0) return
 
   const target = event.target as HTMLElement | null
-  if (target?.closest('button, summary, details, pre, .content-area')) return
+  if (target?.closest('button')) return
 
   await getCurrentWindow().startDragging().catch(() => {})
 }
@@ -55,9 +55,9 @@ function popupTitle(): string {
 </script>
 
 <template>
-  <div class="popup-container" data-tauri-drag-region @mousedown="startDrag">
+  <div class="popup-container">
     <!-- Header -->
-    <div class="header-bar" data-tauri-drag-region>
+    <div class="header-bar" data-tauri-drag-region @mousedown="startDrag">
       <div class="flex-items-center gap-2" data-tauri-drag-region>
         <span class="text-sm font-medium text-gray-700" data-tauri-drag-region>{{ popupTitle() }}</span>
         <span class="text-xs" :class="statusClass(popup.status)" data-tauri-drag-region>{{ statusLabel[popup.status] }}</span>
@@ -97,7 +97,6 @@ function popupTitle(): string {
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   border: 1px solid #e5e7eb;
   overflow: hidden;
-  cursor: move;
 }
 
 .header-bar {
