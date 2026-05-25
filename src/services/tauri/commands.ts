@@ -25,6 +25,18 @@ export async function closePopupWindow(): Promise<void> {
   await invoke('close_popup_window')
 }
 
+export async function beginPopupDrag(cursorX: number, cursorY: number): Promise<void> {
+  await invoke('begin_popup_drag', { cursorX, cursorY })
+}
+
+export async function dragPopupWindow(cursorX: number, cursorY: number): Promise<void> {
+  await invoke('drag_popup_window', { cursorX, cursorY })
+}
+
+export async function endPopupDrag(): Promise<void> {
+  await invoke('end_popup_drag')
+}
+
 export async function getPermissionStatus(): Promise<Record<string, string>> {
   return await invoke<Record<string, string>>('get_permission_status')
 }

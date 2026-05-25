@@ -200,18 +200,23 @@ fn main() {
     );
 
     // Register Tauri commands.
-    let builder = builder.invoke_handler(tauri::generate_handler![
-        commands::clipboard::get_selected_text,
-        commands::config::load_app_config,
-        commands::config::save_app_config,
-        commands::permissions::get_permission_status,
-        commands::permissions::open_accessibility_settings,
-        commands::permissions::open_screen_recording_settings,
-        commands::screenshot::start_screenshot_selection,
-        commands::screenshot::read_screenshot_image,
-        commands::url::open_github_releases,
-        commands::window::close_popup_window
-    ]);
+    let builder = builder
+        .manage(commands::window::PopupDragState::default())
+        .invoke_handler(tauri::generate_handler![
+            commands::clipboard::get_selected_text,
+            commands::config::load_app_config,
+            commands::config::save_app_config,
+            commands::permissions::get_permission_status,
+            commands::permissions::open_accessibility_settings,
+            commands::permissions::open_screen_recording_settings,
+            commands::screenshot::start_screenshot_selection,
+            commands::screenshot::read_screenshot_image,
+            commands::url::open_github_releases,
+            commands::window::close_popup_window,
+            commands::window::begin_popup_drag,
+            commands::window::drag_popup_window,
+            commands::window::end_popup_drag
+        ]);
 
     let builder = {
         use tauri::menu::MenuEvent;

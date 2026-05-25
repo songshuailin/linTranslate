@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { cursorPosition, PhysicalPosition } from '@tauri-apps/api/window'
-import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
+import { beginPopupDrag, dragPopupWindow, endPopupDrag } from '../../services/tauri/commands'
 import type { TranslationPopup, TranslationStatus } from '../../services/translator/translator-types'
 
 interface Props {
@@ -17,7 +16,6 @@ const emit = defineEmits<{
 }>()
 
 const isCopied = ref(false)
-const popupWindow = getCurrentWebviewWindow()
 
 async function copyText(): Promise<void> {
   try {
@@ -40,43 +38,62 @@ async function startDrag(event: PointerEvent): Promise<void> {
   const dragTarget = event.currentTarget as HTMLElement | null
   dragTarget?.setPointerCapture?.(event.pointerId)
 
-  const startCursor = await cursorPosition()
-  const startPosition = await popupWindow.outerPosition()
   let frame = 0
-  let latestCursor = startCursor
+  let isActive = true
+  let beginFinished = false
+  let beginFailed = false
+  let latestCursor = { x: event.screenX, y: event.screenY }
+  let beginPromise: Promise<void> = Promise.resolve()
 
-  const stopManualDrag = () => {
+  const finishDrag = () => {
+    if (!isActive) return
+    isActive = false
     if (frame) {
       cancelAnimationFrame(frame)
       frame = 0
     }
     dragTarget?.releasePointerCapture?.(event.pointerId)
     window.removeEventListener('pointermove', moveManually)
-    window.removeEventListener('pointerup', stopManualDrag)
-    window.removeEventListener('pointercancel', stopManualDrag)
+    window.removeEventListener('pointerup', finishDrag)
+    window.removeEventListener('pointercancel', finishDrag)
+
+    const endDrag = () => endPopupDrag().catch((e) => console.error('[popup] end drag failed', e))
+    if (beginFinished) {
+      endDrag()
+    } else {
+      beginPromise.finally(endDrag)
+    }
+
     emit('dragEnd')
   }
 
   const updatePosition = async () => {
     frame = 0
-    await popupWindow.setPosition(new PhysicalPosition(
-      startPosition.x + latestCursor.x - startCursor.x,
-      startPosition.y + latestCursor.y - startCursor.y,
-    )).catch(() => {})
+    await beginPromise.catch(() => {})
+    if (!isActive || beginFailed) return
+
+    await dragPopupWindow(latestCursor.x, latestCursor.y)
+      .catch((e) => console.error('[popup] drag failed', e))
   }
 
-  async function moveManually() {
-    latestCursor = await cursorPosition().catch(() => latestCursor)
+  function moveManually(moveEvent: PointerEvent) {
+    latestCursor = { x: moveEvent.screenX, y: moveEvent.screenY }
     if (!frame) {
       frame = requestAnimationFrame(updatePosition)
     }
   }
 
   window.addEventListener('pointermove', moveManually)
-  window.addEventListener('pointerup', stopManualDrag)
-  window.addEventListener('pointercancel', stopManualDrag)
+  window.addEventListener('pointerup', finishDrag)
+  window.addEventListener('pointercancel', finishDrag)
 
-  popupWindow.startDragging().catch(() => {})
+  beginPromise = beginPopupDrag(event.screenX, event.screenY)
+    .then(() => { beginFinished = true })
+    .catch((e) => {
+      beginFailed = true
+      console.error('[popup] begin drag failed', e)
+      finishDrag()
+    })
 }
 
 const statusLabel: Record<TranslationStatus, string> = {
@@ -103,10 +120,10 @@ function popupTitle(): string {
 <template>
   <div class="popup-container">
     <!-- Header -->
-    <div class="header-bar" data-tauri-drag-region @pointerdown="startDrag">
-      <div class="flex-items-center gap-2" data-tauri-drag-region>
-        <span class="text-sm font-medium text-gray-700" data-tauri-drag-region>{{ popupTitle() }}</span>
-        <span class="text-xs" :class="statusClass(popup.status)" data-tauri-drag-region>{{ statusLabel[popup.status] }}</span>
+    <div class="header-bar" @pointerdown="startDrag">
+      <div class="flex-items-center gap-2">
+        <span class="text-sm font-medium text-gray-700">{{ popupTitle() }}</span>
+        <span class="text-xs" :class="statusClass(popup.status)">{{ statusLabel[popup.status] }}</span>
       </div>
       <div class="flex gap-1">
         <button title="复制" class="action-btn" @pointerdown.stop @click="copyText">
@@ -141,8 +158,8 @@ function popupTitle(): string {
   border-radius: 14px;
   background-color: rgba(255, 255, 255, 0.98);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e5e7eb;
   overflow: hidden;
+  outline: none;
 }
 
 .header-bar {
@@ -153,6 +170,8 @@ function popupTitle(): string {
   border-bottom: 1px solid #f3f4f6;
   cursor: move;
   user-select: none;
+  touch-action: none;
+  -webkit-user-select: none;
 }
 
 .flex-items-center {
